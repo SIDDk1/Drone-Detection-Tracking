@@ -11,6 +11,5 @@ backend/.DS_Store
 backend/drone_tracking.db
 venv/
 backend/venv/
-*.mp4
-*.pt
+V_DRONE_ALL.mp4
 .env*
