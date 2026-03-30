@@ -1,0 +1,27 @@
+/* Reset margins and paddings */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Apply font and background globally */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f2f5;
+  color: #333;
+  min-height: 100vh;
+}
+
+/* Remove default input outline on focus (optional) */
+input:focus {
+  outline: none;
+}
+
+/* Center root app */
+/* #root {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px;
+} */

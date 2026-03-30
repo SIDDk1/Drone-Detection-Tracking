@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Drone Graph</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Drone Graph</h1>
+  <p id="drone-id">Loading...</p>
+  <img id="graph" src="" width="600" height="400" alt="Drone Graph" />
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const droneId = params.get("droneId");
+    document.getElementById("drone-id").textContent = `Drone ID: ${droneId}`;
+    document.getElementById("graph").src = `https://via.placeholder.com/600x400.png?text=Graph+for+${droneId}`;
+  </script>
+</body>
+</html>
