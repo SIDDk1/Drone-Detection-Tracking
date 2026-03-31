@@ -21,12 +21,17 @@ from typing import List, Optional
 import os
 from pathlib import Path
 import numpy as np
+import threading
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 DATABASE_URL = "sqlite:///./drone_tracking.db"
 engine = create_engine(DATABASE_URL, echo=True)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "best.pt")
+VIDEO_PATH = os.path.join(BASE_DIR, "..", "V_DRONE_FIRST_4_MIN.mp4")
 
 # This function will run during startup and shutdown
 @asynccontextmanager
@@ -45,10 +50,9 @@ async def lifespan(app: FastAPI):
     # Initialize Drone Tracker
     try:
         if not os.path.exists(MODEL_PATH):
-            logger.error(f"FATAL: Model file not found at '{MODEL_PATH}'. Tracker cannot be initialized.")
-            tracker = None
+            raise RuntimeError(f"Model file not found at {MODEL_PATH}")
         else:
-            tracker = DroneTracker(MODEL_PATH, confidence_threshold=0.5, video_source="../V_DRONE_FIRST_4_MIN.mp4")
+            tracker = DroneTracker(MODEL_PATH, confidence_threshold=0.5, video_source=VIDEO_PATH)
             
             # Define and set callbacks for WebSocket broadcasting
             async def on_new_detection(data):

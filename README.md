@@ -1,3 +1,13 @@
+---
+title: Drone Detection API
+emoji: 🚁
+colorFrom: blue
+colorTo: red
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # 🚁 Drone Tracking Web Application
 
 A full-stack real-time drone detection and tracking system built with FastAPI backend and React frontend.
