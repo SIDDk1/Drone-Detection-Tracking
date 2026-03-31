@@ -23,5 +23,26 @@ jobs:
           HF_USERNAME: ${{ secrets.HF_USERNAME }}
           SPACE_NAME: ${{ secrets.SPACE_NAME }}
         run: |
-          pip install -U "huggingface_hub[cli]"
-          huggingface-cli upload $HF_USERNAME/$SPACE_NAME . . --repo-type space --token $HF_TOKEN
+          python -m pip install -U "huggingface_hub"
+          cat << 'EOF' > deploy.py
+          import os
+          from huggingface_hub import HfApi
+          token = os.environ.get("HF_TOKEN")
+          user = os.environ.get("HF_USERNAME")
+          space = os.environ.get("SPACE_NAME")
+          if not token or not user or not space:
+              raise ValueError("Missing HF_TOKEN, HF_USERNAME, or SPACE_NAME environment variables in GitHub Secrets!")
+          api = HfApi(token=token)
+          try:
+              api.upload_folder(
+                  folder_path=".",
+                  repo_id=f"{user}/{space}",
+                  repo_type="space",
+                  ignore_patterns=[".git/*"]
+              )
+              print("Successfully uploaded to Hugging Face Spaces!")
+          except Exception as e:
+              print(f"Error during upload: {e}")
+              exit(1)
+          EOF
+          python deploy.py
