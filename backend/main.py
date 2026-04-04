@@ -1,11 +1,10 @@
 from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 import time
 from contextlib import asynccontextmanager
-from sqlmodel import SQLModel, create_engine
 from database import get_session
 from models import (
     Detection, DetectionResponse, DetectionCreate, 
@@ -21,17 +20,62 @@ from typing import List, Optional
 import os
 from pathlib import Path
 import numpy as np
-import threading
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-DATABASE_URL = "sqlite:///./drone_tracking.db"
-engine = create_engine(DATABASE_URL, echo=True)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "best.pt")
-VIDEO_PATH = os.path.join(BASE_DIR, "..", "V_DRONE_FIRST_4_MIN.mp4")
+
+
+def resolve_model_path() -> Optional[str]:
+    """Resolve YOLO weights: MODEL_PATH env, backend/best.pt, or HF_MODEL_REPO download."""
+    env_model = os.getenv("MODEL_PATH")
+    if env_model:
+        p = Path(env_model)
+        if not p.is_absolute():
+            p = Path(BASE_DIR) / p
+        if p.is_file():
+            return str(p)
+        logger.warning("MODEL_PATH is set but file not found: %s", p)
+
+    default = Path(BASE_DIR) / "best.pt"
+    if default.is_file():
+        return str(default)
+
+    repo = os.getenv("HF_MODEL_REPO", "").strip()
+    if not repo:
+        return None
+
+    filename = os.getenv("HF_MODEL_FILE", "best.pt").strip() or "best.pt"
+    try:
+        from huggingface_hub import hf_hub_download
+
+        token = os.getenv("HF_TOKEN") or None
+        path = hf_hub_download(
+            repo_id=repo,
+            filename=filename,
+            local_dir=BASE_DIR,
+            token=token,
+        )
+        logger.info("Downloaded model from Hugging Face: %s", path)
+        return str(path)
+    except Exception as e:
+        logger.error("Failed to download model from Hugging Face (HF_MODEL_REPO=%s): %s", repo, e)
+        return None
+
+
+def resolve_video_path() -> str:
+    env_v = os.getenv("VIDEO_PATH", "").strip()
+    if env_v and os.path.isfile(env_v):
+        return env_v
+    rel = os.path.join(BASE_DIR, "..", "V_DRONE_FIRST_4_MIN.mp4")
+    if os.path.isfile(rel):
+        return rel
+    home_candidate = os.path.join(os.path.expanduser("~"), "V_DRONE_FIRST_4_MIN.mp4")
+    if os.path.isfile(home_candidate):
+        return home_candidate
+    return rel
 
 # This function will run during startup and shutdown
 @asynccontextmanager
@@ -49,21 +93,29 @@ async def lifespan(app: FastAPI):
 
     # Initialize Drone Tracker
     try:
-        if not os.path.exists(MODEL_PATH):
-            raise RuntimeError(f"Model file not found at {MODEL_PATH}")
-        else:
-            tracker = DroneTracker(MODEL_PATH, confidence_threshold=0.5, video_source=VIDEO_PATH)
-            
-            # Define and set callbacks for WebSocket broadcasting
-            async def on_new_detection(data):
-                await manager.broadcast(json.dumps(data))
-                
-            async def on_status_update(data):
-                await manager.broadcast(json.dumps(data))
-                
-            tracker.set_callbacks(on_new_detection, on_status_update)
-            logger.info("✅ DroneTracker initialized successfully.")
-            
+        model_path = resolve_model_path()
+        video_path = resolve_video_path()
+        if not model_path:
+            raise RuntimeError(
+                "No model weights found. Add backend/best.pt to the repo, set MODEL_PATH, "
+                "or set HF_MODEL_REPO (and optional HF_MODEL_FILE) on the Space to download weights."
+            )
+        if not os.path.isfile(video_path):
+            logger.warning("Video file not found at %s — camera start may fail.", video_path)
+
+        tracker = DroneTracker(
+            model_path, confidence_threshold=0.5, video_source=video_path
+        )
+
+        async def on_new_detection(data):
+            await manager.broadcast(json.dumps(data))
+
+        async def on_status_update(data):
+            await manager.broadcast(json.dumps(data))
+
+        tracker.set_callbacks(on_new_detection, on_status_update)
+        logger.info("✅ DroneTracker initialized successfully.")
+
     except Exception as e:
         logger.error(f"💥 Failed to initialize DroneTracker: {e}", exc_info=True)
         tracker = None
@@ -96,11 +148,9 @@ app.add_middleware(
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Global tracker instance - Replace with your model path
-MODEL_PATH = 'best.pt'
 tracker: Optional[DroneTracker] = None
 
-# WebSocket connection manager
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -132,47 +182,32 @@ class ConnectionManager:
         for connection in disconnected:
             self.disconnect(connection)
 
-manager = ConnectionManager()
 
-# Initialize tracker with callbacks
-# def initialize_tracker():
-#     global tracker
-#     try:
-#         if not os.path.exists(MODEL_PATH):
-#             logger.error(f"Model file not found: {MODEL_PATH}")
-#             return None
-            
-#         tracker = DroneTracker(MODEL_PATH, confidence_threshold=0.5)
-        
-#         # Set WebSocket callbacks
-#         async def on_new_detection(data):
-#             await manager.broadcast(json.dumps(data))
-            
-#         async def on_status_update(data):
-#             await manager.broadcast(json.dumps(data))
-            
-#         tracker.set_callbacks(on_new_detection, on_status_update)
-#         logger.info("Tracker initialized successfully")
-#         return tracker
-        
-#     except Exception as e:
-#         logger.error(f"Failed to initialize tracker: {e}")
-#         return None
-
-# # Initialize on startup
-# @app.on_event("startup")
-# async def startup_event():
-#     initialize_tracker()
-
-
-
+manager: Optional[ConnectionManager] = None
 
 
 def generate_frames():
     """Generate video frames for streaming"""
     try:
         while True:
-            if tracker.is_camera_running():
+            if tracker is None:
+                status_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                cv2.putText(
+                    status_frame,
+                    "Tracker unavailable — add best.pt or HF_MODEL_REPO",
+                    (20, 240),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.55,
+                    (0, 0, 255),
+                    2,
+                )
+                ret, buffer = cv2.imencode(".jpg", status_frame)
+                if ret:
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n"
+                    )
+            elif tracker.is_camera_running():
                 frame = tracker.get_latest_frame()
                 if frame is not None:
                     # Encode frame to JPEG

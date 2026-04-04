@@ -9,3 +9,4 @@ websockets
 python-dateutil
 numpy 
 Pillow
+huggingface_hub>=0.20.0

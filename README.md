@@ -136,6 +136,29 @@ drone-tracking/
     └── vite.config.js      # Vite configuration
 ```
 
+## Deploying to Hugging Face Spaces
+
+This repo is set up for a **Docker** Space (`sdk: docker` in the README header). Typical failures were:
+
+1. **Docker build error** — `libgl1-mesa-glx` is not available on current Debian images. The `Dockerfile` uses `libgl1` and related runtime libraries instead.
+2. **Runtime: no weights** — `backend/best.pt` is not in the repository (often too large for Git). Use one of:
+   - **Space / container variables** (Settings → Variables and secrets):
+     - `HF_MODEL_REPO` — Hugging Face model repo id, e.g. `your-username/your-drone-yolo`
+     - `HF_MODEL_FILE` — optional, defaults to `best.pt`
+     - `HF_TOKEN` — only if the model repo is private or gated
+   - Or **`MODEL_PATH`** — absolute path to a weights file inside the container if you bake it into the image.
+   - Or add `best.pt` under `backend/` and ensure it is included in what you push to the Space.
+
+### GitHub → Hugging Face sync (optional)
+
+If you use [`.github/workflows/sync-to-hub.yml`](.github/workflows/sync-to-hub.yml), add these **repository secrets** in GitHub (Settings → Secrets and variables → Actions):
+
+- `HF_TOKEN` — Hugging Face access token with write access
+- `HF_USERNAME` — your HF username
+- `SPACE_NAME` — the Space name (repo id without the username), e.g. `Drone-Detection-Tracking`
+
+If any secret is missing, the workflow fails with a clear error. After a successful run, the Space rebuilds from the uploaded files.
+
 ## Configuration
 
 ### Backend Configuration

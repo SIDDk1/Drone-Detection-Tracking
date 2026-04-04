@@ -38,7 +38,17 @@ jobs:
                   folder_path=".",
                   repo_id=f"{user}/{space}",
                   repo_type="space",
-                  ignore_patterns=[".git/*"]
+                  ignore_patterns=[
+                      ".git/*",
+                      ".github/*",
+                      "**/node_modules/**",
+                      "**/venv/**",
+                      "**/.venv/**",
+                      "**/__pycache__/**",
+                      "**/*.pyc",
+                      "**/.pytest_cache/**",
+                      "frontend/**",
+                  ],
               )
               print("Successfully uploaded to Hugging Face Spaces!")
           except Exception as e:

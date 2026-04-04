@@ -4,10 +4,6 @@ import os
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./drone_tracking.db")
-print(DATABASE_URL)
-for i in range(10):
-    print(i)
-
 
 # Create engine
 if DATABASE_URL.startswith("sqlite"):
