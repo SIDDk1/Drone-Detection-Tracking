@@ -151,13 +151,20 @@ This repo is set up for a **Docker** Space (`sdk: docker` in the README header).
 
 ### GitHub → Hugging Face sync (optional)
 
-If you use [`.github/workflows/sync-to-hub.yml`](.github/workflows/sync-to-hub.yml), add these **repository secrets** in GitHub (Settings → Secrets and variables → Actions):
+If you use [`.github/workflows/sync-to-hub.yml`](.github/workflows/sync-to-hub.yml), add **repository secrets** (Settings → Secrets and variables → Actions). **Do not paste line breaks** inside secret values (a trailing Enter is a common cause of `Repo id must use alphanumeric chars` errors).
 
-- `HF_TOKEN` — Hugging Face access token with write access
-- `HF_USERNAME` — your HF username (must own the Space)
-- `SPACE_NAME` — **only** the Space slug, e.g. `Drone-Detection-Tracking` — not `SIDDk1/Drone-Detection-Tracking` and no `/` in the value
+**Recommended (one id):**
 
-Create the Space on [Hugging Face](https://huggingface.co/new-space) first (same Docker template as this repo). If any secret is wrong or the Space does not exist, the sync logs will show the API error. After a successful run, the Space rebuilds from the uploaded files.
+- `HF_TOKEN` — Hugging Face token with **write** access
+- `HF_SPACE_REPO_ID` — exactly `YourUsername/YourSpaceName` (same as in `https://huggingface.co/spaces/YourUsername/YourSpaceName`)
+
+**Alternative (two parts):**
+
+- `HF_TOKEN`
+- `HF_USERNAME` — namespace only (e.g. `SIDDk1`)
+- `SPACE_NAME` — Space slug only (e.g. `Drone-Detection-Tracking`), **no** slash
+
+Create the Space on [Hugging Face](https://huggingface.co/new-space) first (Docker). After a successful sync, the Space rebuilds from the uploaded files.
 
 ## Configuration
 

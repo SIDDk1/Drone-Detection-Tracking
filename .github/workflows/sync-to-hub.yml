@@ -21,6 +21,8 @@ jobs:
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # Prefer a single repo id to avoid newline/split mistakes:
+          HF_SPACE_REPO_ID: ${{ secrets.HF_SPACE_REPO_ID }}
           HF_USERNAME: ${{ secrets.HF_USERNAME }}
           SPACE_NAME: ${{ secrets.SPACE_NAME }}
         run: |
