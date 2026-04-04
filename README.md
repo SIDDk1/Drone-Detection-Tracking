@@ -154,10 +154,10 @@ This repo is set up for a **Docker** Space (`sdk: docker` in the README header).
 If you use [`.github/workflows/sync-to-hub.yml`](.github/workflows/sync-to-hub.yml), add these **repository secrets** in GitHub (Settings → Secrets and variables → Actions):
 
 - `HF_TOKEN` — Hugging Face access token with write access
-- `HF_USERNAME` — your HF username
-- `SPACE_NAME` — the Space name (repo id without the username), e.g. `Drone-Detection-Tracking`
+- `HF_USERNAME` — your HF username (must own the Space)
+- `SPACE_NAME` — **only** the Space slug, e.g. `Drone-Detection-Tracking` — not `SIDDk1/Drone-Detection-Tracking` and no `/` in the value
 
-If any secret is missing, the workflow fails with a clear error. After a successful run, the Space rebuilds from the uploaded files.
+Create the Space on [Hugging Face](https://huggingface.co/new-space) first (same Docker template as this repo). If any secret is wrong or the Space does not exist, the sync logs will show the API error. After a successful run, the Space rebuilds from the uploaded files.
 
 ## Configuration
 
