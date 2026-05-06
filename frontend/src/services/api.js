@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { API_BASE_URL, API_ENDPOINTS, CAMERA_ACTIONS } from '../utils/constants'
+import { API_BASE_URL, WS_BASE_URL, API_ENDPOINTS, CAMERA_ACTIONS } from '../utils/constants'
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -119,9 +119,7 @@ export const getVideoStreamUrl = () => {
 
 // Utility function to get WebSocket URL
 export const getWebSocketUrl = () => {
-  const wsProtocol = API_BASE_URL.startsWith('https') ? 'wss' : 'ws'
-  const wsHost = API_BASE_URL.replace(/^https?:\/\//, '')
-  return `${wsProtocol}://${wsHost}${API_ENDPOINTS.WEBSOCKET}`
+  return `${WS_BASE_URL}${API_ENDPOINTS.WEBSOCKET}`
 }
 
 // Error handling utility

@@ -1,9 +1,15 @@
 const hostname = typeof window !== "undefined" ? window.location.host : "localhost:8000";
-const wsProtocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
+const protocol = typeof window !== "undefined" ? window.location.protocol : "http:";
 const isLocal = hostname.includes("localhost") || hostname.includes("127.0.0.1");
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:8000' : '');
-export const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || (isLocal ? 'ws://localhost:8000' : `${wsProtocol}//${hostname}`);
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:8000' : `${protocol}//${hostname}`);
+
+const getWsUrl = (apiUrl) => {
+  if (!apiUrl) return '';
+  return apiUrl.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://');
+};
+
+export const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || getWsUrl(API_BASE_URL);
 
 // API Endpoints
 export const API_ENDPOINTS = {
