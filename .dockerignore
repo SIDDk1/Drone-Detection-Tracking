@@ -6,6 +6,5 @@
 **/.venv
 **/node_modules
 **/*.db
-frontend
 *.md
 !README.md
