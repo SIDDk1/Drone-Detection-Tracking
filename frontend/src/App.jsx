@@ -20,6 +20,7 @@ import DroneMap from './components/DroneMap'
 import Notifications from './components/Notifications'
 import useWebSocket from './hooks/useWebSocket'
 import { getCameraStatus, getTodayDetections } from './services/api'
+import { WS_BASE_URL, API_ENDPOINTS } from './utils/constants'
 
 import './App.css'
 
@@ -33,7 +34,7 @@ function App() {
   const [loading, setLoading] = useState(true)
 
   // WebSocket connection
-  const { lastMessage, sendMessage } = useWebSocket('ws://localhost:8000/ws')
+  const { lastMessage, sendMessage } = useWebSocket(`${WS_BASE_URL}${API_ENDPOINTS.WEBSOCKET}`)
 
   // Handle WebSocket messages
   useEffect(() => {

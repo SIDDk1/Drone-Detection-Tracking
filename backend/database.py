@@ -13,6 +13,7 @@ else:
 
 def create_db_and_tables():
     """Create database tables"""
+    import models
     SQLModel.metadata.create_all(engine)
 
 def get_session() -> Generator[Session, None, None]:
