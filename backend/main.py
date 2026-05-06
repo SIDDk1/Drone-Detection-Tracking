@@ -258,9 +258,15 @@ def generate_frames():
 
 # API Routes
 
+from fastapi.responses import FileResponse
+import os
+
 @app.get("/")
 async def root():
-    """Root endpoint with API info"""
+    """Root endpoint serving the React frontend"""
+    index_path = os.path.join(BASE_DIR, "static", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
     return {
         "message": "Drone Tracking API",
         "version": "1.0.0",
@@ -272,6 +278,16 @@ async def root():
             "/ws - WebSocket connection"
         ]
     }
+
+@app.exception_handler(404)
+async def custom_404_handler(request, exc):
+    """Fallback to index.html for React Router"""
+    if request.url.path.startswith("/api/") or request.url.path.startswith("/ws"):
+        return {"detail": "Not Found"}
+    index_path = os.path.join(BASE_DIR, "static", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"detail": "Not Found"}
 
 @app.get("/video")
 async def video_feed():

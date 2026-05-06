@@ -1,3 +1,12 @@
+# Stage 1: Build the React frontend
+FROM node:18 AS frontend-builder
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Build the Python backend
 FROM python:3.9-slim
 
 # OpenCV / headless GUI deps (Bookworm+ dropped libgl1-mesa-glx; use libgl1)
@@ -29,6 +38,11 @@ WORKDIR $HOME/app
 
 # Copy backend files and set permissions
 COPY --chown=user backend/ $HOME/app/
+
+# Replace the placeholder static files with the built React frontend
+RUN rm -rf $HOME/app/static/*
+COPY --chown=user --from=frontend-builder /frontend/dist/ $HOME/app/static/
+
 # Copy the video file to the parent directory so `../` paths resolve correctly
 COPY --chown=user V_DRONE_FIRST_4_MIN.mp4 $HOME/V_DRONE_FIRST_4_MIN.mp4
 
