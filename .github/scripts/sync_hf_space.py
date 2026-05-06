@@ -25,6 +25,7 @@ ALLOW_PATTERNS = [
     "app.py",
     "packages.txt",
     "backend/**",
+    "frontend/**",
     "*.mp4",
     "**/*.mp4",
 ]
